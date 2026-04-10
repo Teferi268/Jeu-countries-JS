@@ -4,8 +4,20 @@ const button = document.querySelector(".select_country");
 const flag_container = document.querySelector(".show_flag");
 const quizz = document.querySelector(".game");
 const nb_proposition = 3; // Nombre de proposition pour le choix du pays
+let selectedRegion = "ALL";
 
 let countriesCache = [];
+
+const navbar = document.querySelector(".navbar");
+
+navbar.addEventListener("click", (event) => {
+  const link = event.target.closest("a[data-region]");
+  if (!link) return;
+
+  event.preventDefault();
+  selectedRegion = link.dataset.region;
+});
+
 // Recuperation de l'API
 async function fetchCountries() {
   const res = await fetch(url);
@@ -47,12 +59,18 @@ async function showRandomFlag() {
         if (countriesCache.length === 0){
             countriesCache = await fetchCountries();
         }
-        const country = getRandomCountry(countriesCache);
+
+        const pool = selectedRegion === "ALL"
+            ? countriesCache
+            : countriesCache.filter((c) => c.region === selectedRegion);
+
+        
+        const country = getRandomCountry(pool);
         flag_container.innerHTML =`
             <img src="${country.flag}" alt="Drapeau de ${country.name}" width="400px" max-height ="300px" max-width ="400px">
             
         `;
-        const choices = getChoices(countriesCache, country, nb_proposition);
+        const choices = getChoices(pool, country, nb_proposition);
         let quizBox = document.querySelector(".quizz");
         if (!quizBox) {
         quizz.insertAdjacentHTML("beforeend", `
@@ -85,7 +103,6 @@ function verify_answer() {
     if (!quizBox) return;
 
     const selected = quizBox.querySelector('input[name="bouton_pays"]:checked');
-    const result = quizBox.querySelector(".resultat");
 
     const bonneReponse = quizBox.dataset.answer;
 
